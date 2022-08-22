@@ -9,11 +9,8 @@
 const handler = {};
 
 // health route handler
-handler.healthHandler = (requestProperties, callback) => {
-    console.log('Health route');
-    console.log(requestProperties.body);
-    return callback(200, 'Hello from health route');
-};
+handler.healthHandler = (_requestProperties, callback) =>
+    callback(200, { message: 'Hello from health route' });
 
 // export module
 module.exports = handler;

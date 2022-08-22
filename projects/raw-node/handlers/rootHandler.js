@@ -22,17 +22,26 @@ handler.handleReqRes = (req, res) => {
 
     let body = '';
     req.setEncoding = 'utf8';
+
     req.on('data', (chunk) => {
         body += chunk;
     });
-    req.on('end', () => {});
 
-    const requestProperties = { method, trimmedPath, query, headers, body };
+    req.on('end', () => {
+        // create object with all request properties
+        const requestProperties = { method, trimmedPath, query, headers, body };
 
-    const chosenHandler = routes[trimmedPath] ?? notFoundHandler;
-    chosenHandler(requestProperties, (statusCode, payload) => {
-        res.statusCode = statusCode;
-        res.end(payload);
+        const chosenHandler = routes[trimmedPath] ?? notFoundHandler;
+
+        chosenHandler(requestProperties, (stsCode, payload) => {
+            const statusCode = typeof stsCode === 'number' ? stsCode : 500;
+            const payloadObj = typeof payload === 'object' ? payload : {};
+            const payloadString = JSON.stringify(payloadObj);
+
+            // return the final response
+            res.writeHead(statusCode);
+            res.end(payloadString);
+        });
     });
 };
 
