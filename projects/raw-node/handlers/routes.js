@@ -6,10 +6,12 @@
  */
 
 // dependencies
-const { healthHandler } = require('./healthHndler');
+const { healthHandler } = require('./healthHandler');
+const { userHandler } = require('./userHandler');
 
 const routes = {
     health: healthHandler,
+    user: userHandler,
 };
 
 // export module

@@ -29,7 +29,13 @@ handler.handleReqRes = (req, res) => {
 
     req.on('end', () => {
         // create object with all request properties
-        const requestProperties = { method, trimmedPath, query, headers, body };
+        const requestProperties = {
+            method: method.toLowerCase(),
+            trimmedPath,
+            query,
+            headers,
+            body,
+        };
 
         const chosenHandler = routes[trimmedPath] ?? notFoundHandler;
 
@@ -39,6 +45,7 @@ handler.handleReqRes = (req, res) => {
             const payloadString = JSON.stringify(payloadObj);
 
             // return the final response
+            res.setHeader('Content-Type', 'application/json');
             res.writeHead(statusCode);
             res.end(payloadString);
         });
