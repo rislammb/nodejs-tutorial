@@ -9,6 +9,7 @@
 const url = require('url');
 const routes = require('./routes');
 const { notFoundHandler } = require('./notFoundHandler');
+const { parseJSON } = require('../helpers/utilities');
 
 // module scaffolding
 const handler = {};
@@ -20,24 +21,25 @@ handler.handleReqRes = (req, res) => {
     const { pathname, query } = url.parse(reqUrl, true);
     const trimmedPath = pathname.replace(/^\/+|\/+$/g, '');
 
+    // create object with all request properties
+    const requestProperties = {
+        method: method.toLowerCase(),
+        trimmedPath,
+        query,
+        headers,
+    };
+
     let body = '';
     req.setEncoding = 'utf8';
+
+    const chosenHandler = routes[trimmedPath] ?? notFoundHandler;
 
     req.on('data', (chunk) => {
         body += chunk;
     });
 
     req.on('end', () => {
-        // create object with all request properties
-        const requestProperties = {
-            method: method.toLowerCase(),
-            trimmedPath,
-            query,
-            headers,
-            body,
-        };
-
-        const chosenHandler = routes[trimmedPath] ?? notFoundHandler;
+        requestProperties.body = parseJSON(body);
 
         chosenHandler(requestProperties, (stsCode, payload) => {
             const statusCode = typeof stsCode === 'number' ? stsCode : 500;
