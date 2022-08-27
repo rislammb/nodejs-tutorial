@@ -155,7 +155,31 @@ handler._users.put = (requestProperties, callback) => {
 };
 
 handler._users.delete = (requestProperties, callback) => {
-    callback(200, { m: 'user delete' });
+    // check the phone number if valid
+    const { query } = requestProperties;
+    const phone =
+        typeof query.phone === 'string' && query.phone.trim().length > 10
+            ? query.phone.trim()
+            : false;
+
+    if (phone) {
+        // lookup the user
+        data.read('users', phone, (err, userData) => {
+            if (err || !userData) {
+                callback(500, { error: 'There was a problem in the server side!' });
+            } else {
+                data.delete('users', phone, (err2) => {
+                    if (err2) {
+                        callback(500, { error: 'There was a problem in the server side!' });
+                    } else {
+                        callback(200, { message: 'User was .deleted successfully!' });
+                    }
+                });
+            }
+        });
+    } else {
+        callback(400, { error: 'There was a problem in your request!' });
+    }
 };
 
 // export module
