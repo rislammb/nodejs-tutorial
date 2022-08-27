@@ -47,8 +47,8 @@ handler._users.post = (requestProperties, callback) => {
 
     if (fristName && lastName && phone && tosAgreement) {
         // make sure that the user doesn't already exists
-        data.read('users', phone, (err, user) => {
-            if (err && !user) {
+        data.read('users', phone, (err, userData) => {
+            if (err && !userData) {
                 const userObj = {
                     fristName,
                     lastName,
@@ -64,7 +64,7 @@ handler._users.post = (requestProperties, callback) => {
                         callback(201, { message: 'User was created successfully.' });
                     }
                 });
-            } else if (user) {
+            } else if (userData) {
                 callback(500, { error: 'User already exists!' });
             } else {
                 callback(500, { error: 'There was a problem in server side!' });
@@ -85,8 +85,8 @@ handler._users.get = (requestProperties, callback) => {
 
     if (phone) {
         // lookup the user
-        data.read('users', phone, (err, userStr) => {
-            const user = { ...parseJSON(userStr) };
+        data.read('users', phone, (err, userData) => {
+            const user = { ...parseJSON(userData) };
 
             if (err || !user) {
                 callback(404, { error: 'Requested user was not found!' });
@@ -101,7 +101,57 @@ handler._users.get = (requestProperties, callback) => {
 };
 
 handler._users.put = (requestProperties, callback) => {
-    callback(200, { m: 'user put' });
+    const { body } = requestProperties;
+    const phone =
+        typeof body.phone === 'string' && body.phone.trim().length > 10 ? body.phone.trim() : false;
+
+    const fristName =
+        typeof body.fristName === 'string' && body.fristName.trim().length > 0
+            ? body.fristName.trim()
+            : false;
+    const lastName =
+        typeof body.lastName === 'string' && body.lastName.trim().length > 0
+            ? body.lastName.trim()
+            : false;
+    const password =
+        typeof body.password === 'string' && body.password.trim().length > 0
+            ? body.password.trim()
+            : false;
+    if (phone) {
+        if (fristName || lastName || password) {
+            // lookup the user
+            data.read('users', phone, (err, userData) => {
+                const user = { ...parseJSON(userData) };
+
+                if (err || !user) {
+                    callback(404, { error: 'Requested user was not found!' });
+                } else {
+                    if (fristName) {
+                        user.fristName = fristName;
+                    }
+                    if (lastName) {
+                        user.lastName = lastName;
+                    }
+                    if (password) {
+                        user.password = hash(password);
+                    }
+
+                    // updated user store to database
+                    data.update('users', phone, user, (err2) => {
+                        if (err2) {
+                            callback(500, { error: 'There was a problem in the server side!' });
+                        } else {
+                            callback(200, { message: 'User was updated successfully.' });
+                        }
+                    });
+                }
+            });
+        } else {
+            callback(400, { error: 'You have a problem in your requset!' });
+        }
+    } else {
+        callback(400, { error: 'Invalid phone number, Olease try again!' });
+    }
 };
 
 handler._users.delete = (requestProperties, callback) => {
