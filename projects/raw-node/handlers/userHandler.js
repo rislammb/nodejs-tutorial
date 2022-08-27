@@ -76,7 +76,28 @@ handler._users.post = (requestProperties, callback) => {
 };
 
 handler._users.get = (requestProperties, callback) => {
-    callback(200, { m: 'user get' });
+    // check the phone number if valid
+    const { query } = requestProperties;
+    const phone =
+        typeof query.phone === 'string' && query.phone.trim().length > 10
+            ? query.phone.trim()
+            : false;
+
+    if (phone) {
+        // lookup the user
+        data.read('users', phone, (err, userStr) => {
+            const user = { ...parseJSON(userStr) };
+
+            if (err || !user) {
+                callback(404, { error: 'Requested user was not found!' });
+            } else {
+                delete user.password;
+                callback(200, user);
+            }
+        });
+    } else {
+        callback(404, { error: 'Requested user was not found!' });
+    }
 };
 
 handler._users.put = (requestProperties, callback) => {
