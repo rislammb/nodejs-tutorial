@@ -6,7 +6,7 @@
  * Date: 28 Aug 2022
  */
 
-// dependendies
+// dependencies
 const { hash, parseJSON, createRandomString } = require('../helpers/utilities');
 const data = require('../lib/data');
 
@@ -121,24 +121,22 @@ handler._token.put = (requestProperties, callback) => {
 };
 
 handler._token.delete = (requestProperties, callback) => {
-    // check the phone number if valid
+    // check the token id if valid
     const { query } = requestProperties;
-    const phone =
-        typeof query.phone === 'string' && query.phone.trim().length > 10
-            ? query.phone.trim()
-            : false;
+    const id =
+        typeof query.id === 'string' && query.id.trim().length === 20 ? query.id.trim() : false;
 
-    if (phone) {
-        // lookup the user
-        data.read('users', phone, (err, userData) => {
-            if (err || !userData) {
-                callback(500, { error: 'There was a problem in the server side!' });
+    if (id) {
+        // lookup the token
+        data.read('tokens', id, (err, tokenData) => {
+            if (err || !tokenData) {
+                callback(404, { error: 'Requested token was not found!' });
             } else {
-                data.delete('users', phone, (err2) => {
+                data.delete('tokens', id, (err2) => {
                     if (err2) {
                         callback(500, { error: 'There was a problem in the server side!' });
                     } else {
-                        callback(200, { message: 'User was .deleted successfully!' });
+                        callback(200, { message: 'Token was deleted successfully!' });
                     }
                 });
             }

@@ -172,7 +172,7 @@ handler._user.delete = (requestProperties, callback) => {
                     if (err2) {
                         callback(500, { error: 'There was a problem in the server side!' });
                     } else {
-                        callback(204, { message: 'User was deleted successfully!' });
+                        callback(200, { message: 'User was deleted successfully!' });
                     }
                 });
             }
