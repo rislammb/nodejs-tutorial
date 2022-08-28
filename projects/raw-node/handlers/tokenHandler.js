@@ -1,73 +1,66 @@
 /* eslint-disable no-underscore-dangle */
 /*
- * Title: User Handler
- * Description: Handler for handle user related route
+ * Title: Token Handler
+ * Description: Handler for handle token related route
  * Author: Rayhanul Islam
- * Date: 25 Aug 2022
+ * Date: 28 Aug 2022
  */
 
 // dependendies
-const { hash, parseJSON } = require('../helpers/utilities');
+const { hash, parseJSON, createRandomString } = require('../helpers/utilities');
 const data = require('../lib/data');
 
 // module scaffolding
 const handler = {};
 
-// user route handler
-handler.userHandler = (requestProperties, callback) => {
+// token route handler
+handler.tokenHandler = (requestProperties, callback) => {
     const acceptedMethod = ['get', 'post', 'put', 'delete'];
 
     if (acceptedMethod.indexOf(requestProperties.method) < 0) {
         callback(405);
     } else {
-        handler._user[requestProperties.method](requestProperties, callback);
+        handler._token[requestProperties.method](requestProperties, callback);
     }
 };
 
-handler._user = {};
+handler._token = {};
 
-handler._user.post = (requestProperties, callback) => {
+handler._token.post = (requestProperties, callback) => {
     const { body } = requestProperties;
-    const fristName =
-        typeof body.fristName === 'string' && body.fristName.trim().length > 0
-            ? body.fristName.trim()
-            : false;
-    const lastName =
-        typeof body.lastName === 'string' && body.lastName.trim().length > 0
-            ? body.lastName.trim()
-            : false;
     const phone =
         typeof body.phone === 'string' && body.phone.trim().length > 10 ? body.phone.trim() : false;
     const password =
         typeof body.password === 'string' && body.password.trim().length > 5
             ? body.password.trim()
             : false;
-    const tosAgreement =
-        typeof body.tosAgreement === 'boolean' && body.tosAgreement ? body.tosAgreement : false;
 
-    if (fristName && lastName && phone && password && tosAgreement) {
-        // make sure that the user doesn't already exists
-        data.read('users', phone, (err, userData) => {
-            if (err && !userData) {
-                const userObj = {
-                    fristName,
-                    lastName,
-                    phone,
-                    password: hash(password),
-                    tosAgreement,
-                };
-
-                data.create('users', phone, userObj, (err2) => {
-                    if (err2) {
-                        callback(500, { error: 'Could not create user!' });
-                    } else {
-                        callback(201, { message: 'User was created successfully.' });
-                    }
-                });
-            } else if (userData) {
-                callback(500, { error: 'User already exists!' });
+    if (phone && password) {
+        data.read('users', phone, (err1, userData) => {
+            if (err1 || !userData) {
+                callback(404, { error: 'Requested user was not found!' });
             } else {
-                callback(500, { error: 'There was a problem in server side!' });
+                const hashedPassword = hash(password);
+                if (hashedPassword === parseJSON(userData).password) {
+                    const tokenId = createRandomString(20);
+                    const expires = Date.now() + 1000 * 60 * 60;
+                    const tokenObj = {
+                        phone,
+                        id: tokenId,
+                        expires,
+                    };
+
+                    // store token in the database
+                    data.create('tokens', tokenId, tokenObj, (err2) => {
+                        if (err2) {
+                            callback(500, { error: 'There was a problem in the server side!' });
+                        } else {
+                            callback(201, tokenObj);
+                        }
+                    });
+                } else {
+                    callback(400, { error: 'Password is not valid!' });
+                }
             }
         });
     } else {
@@ -75,7 +68,7 @@ handler._user.post = (requestProperties, callback) => {
     }
 };
 
-handler._user.get = (requestProperties, callback) => {
+handler._token.get = (requestProperties, callback) => {
     // check the phone number if valid
     const { query } = requestProperties;
     const phone =
@@ -86,11 +79,11 @@ handler._user.get = (requestProperties, callback) => {
     if (phone) {
         // lookup the user
         data.read('users', phone, (err, userData) => {
-            if (err || !userData) {
+            const user = { ...parseJSON(userData) };
+
+            if (err || !user) {
                 callback(404, { error: 'Requested user was not found!' });
             } else {
-                const user = { ...parseJSON(userData) };
-
                 delete user.password;
                 callback(200, user);
             }
@@ -100,7 +93,7 @@ handler._user.get = (requestProperties, callback) => {
     }
 };
 
-handler._user.put = (requestProperties, callback) => {
+handler._token.put = (requestProperties, callback) => {
     const { body } = requestProperties;
     const phone =
         typeof body.phone === 'string' && body.phone.trim().length > 10 ? body.phone.trim() : false;
@@ -114,7 +107,7 @@ handler._user.put = (requestProperties, callback) => {
             ? body.lastName.trim()
             : false;
     const password =
-        typeof body.password === 'string' && body.password.trim().length > 5
+        typeof body.password === 'string' && body.password.trim().length > 0
             ? body.password.trim()
             : false;
     if (phone) {
@@ -154,7 +147,7 @@ handler._user.put = (requestProperties, callback) => {
     }
 };
 
-handler._user.delete = (requestProperties, callback) => {
+handler._token.delete = (requestProperties, callback) => {
     // check the phone number if valid
     const { query } = requestProperties;
     const phone =
@@ -166,13 +159,13 @@ handler._user.delete = (requestProperties, callback) => {
         // lookup the user
         data.read('users', phone, (err, userData) => {
             if (err || !userData) {
-                callback(404, { error: 'Request user was not found!' });
+                callback(500, { error: 'There was a problem in the server side!' });
             } else {
                 data.delete('users', phone, (err2) => {
                     if (err2) {
                         callback(500, { error: 'There was a problem in the server side!' });
                     } else {
-                        callback(200, { message: 'User was deleted successfully!' });
+                        callback(200, { message: 'User was .deleted successfully!' });
                     }
                 });
             }
