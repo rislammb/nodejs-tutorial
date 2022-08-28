@@ -71,7 +71,7 @@ handler._user.post = (requestProperties, callback) => {
             }
         });
     } else {
-        callback(400, { error: 'You have a problem in your request!' });
+        callback(400, { error: 'There was a problem in your request!' });
     }
 };
 
@@ -96,7 +96,7 @@ handler._user.get = (requestProperties, callback) => {
             }
         });
     } else {
-        callback(400, { error: 'You have a problem in your request!' });
+        callback(400, { error: 'There was a problem in your request!' });
     }
 };
 
@@ -141,7 +141,7 @@ handler._user.put = (requestProperties, callback) => {
                         if (err2) {
                             callback(500, { error: 'There was a problem in the server side!' });
                         } else {
-                            callback(200, { message: 'User was updated successfully.' });
+                            callback(201, { message: 'User updated successfully.' });
                         }
                     });
                 }
@@ -150,7 +150,7 @@ handler._user.put = (requestProperties, callback) => {
             callback(400, { error: 'You have a problem in your requset!' });
         }
     } else {
-        callback(400, { error: 'Invalid phone number, Olease try again!' });
+        callback(400, { error: 'Invalid phone number, Please try again!' });
     }
 };
 
@@ -172,7 +172,7 @@ handler._user.delete = (requestProperties, callback) => {
                     if (err2) {
                         callback(500, { error: 'There was a problem in the server side!' });
                     } else {
-                        callback(200, { message: 'User was deleted successfully!' });
+                        callback(204, { message: 'User was deleted successfully!' });
                     }
                 });
             }

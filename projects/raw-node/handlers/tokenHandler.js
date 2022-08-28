@@ -64,7 +64,7 @@ handler._token.post = (requestProperties, callback) => {
             }
         });
     } else {
-        callback(400, { error: 'You have a problem in your request!' });
+        callback(400, { error: 'There was a problem in your request!' });
     }
 };
 
@@ -85,61 +85,38 @@ handler._token.get = (requestProperties, callback) => {
             }
         });
     } else {
-        callback(400, { error: 'You have a problem in your request!' });
+        callback(400, { error: 'There was a problem in your request!' });
     }
 };
 
 handler._token.put = (requestProperties, callback) => {
     const { body } = requestProperties;
-    const phone =
-        typeof body.phone === 'string' && body.phone.trim().length > 10 ? body.phone.trim() : false;
+    const id = typeof body.id === 'string' && body.id.trim().length === 20 ? body.id.trim() : false;
+    const extend = !!(typeof body.extend === 'boolean' && body.extend === true);
 
-    const fristName =
-        typeof body.fristName === 'string' && body.fristName.trim().length > 0
-            ? body.fristName.trim()
-            : false;
-    const lastName =
-        typeof body.lastName === 'string' && body.lastName.trim().length > 0
-            ? body.lastName.trim()
-            : false;
-    const password =
-        typeof body.password === 'string' && body.password.trim().length > 0
-            ? body.password.trim()
-            : false;
-    if (phone) {
-        if (fristName || lastName || password) {
-            // lookup the user
-            data.read('users', phone, (err, userData) => {
-                const user = { ...parseJSON(userData) };
-
-                if (err || !user) {
-                    callback(404, { error: 'Requested user was not found!' });
-                } else {
-                    if (fristName) {
-                        user.fristName = fristName;
-                    }
-                    if (lastName) {
-                        user.lastName = lastName;
-                    }
-                    if (password) {
-                        user.password = hash(password);
-                    }
-
-                    // updated user store to database
-                    data.update('users', phone, user, (err2) => {
+    if (id && extend) {
+        data.read('tokens', id, (err1, tokenData) => {
+            if (err1 || !tokenData) {
+                callback(404, { error: 'Requested token was not found!' });
+            } else {
+                const tokenObj = { ...parseJSON(tokenData) };
+                if (tokenObj.expires > Date.now()) {
+                    tokenObj.expires = Date.now() + 1000 * 60 * 60;
+                    // store the updated token
+                    data.update('tokens', id, tokenObj, (err2) => {
                         if (err2) {
                             callback(500, { error: 'There was a problem in the server side!' });
                         } else {
-                            callback(200, { message: 'User was updated successfully.' });
+                            callback(201, { message: 'Token updated successfully!' });
                         }
                     });
+                } else {
+                    callback(400, { error: 'Token was already expired!' });
                 }
-            });
-        } else {
-            callback(400, { error: 'You have a problem in your requset!' });
-        }
+            }
+        });
     } else {
-        callback(400, { error: 'Invalid phone number, Olease try again!' });
+        callback(400, { error: 'There was a problem in your request!' });
     }
 };
 
