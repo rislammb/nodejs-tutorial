@@ -69,27 +69,23 @@ handler._token.post = (requestProperties, callback) => {
 };
 
 handler._token.get = (requestProperties, callback) => {
-    // check the phone number if valid
+    // check the token id if valid
     const { query } = requestProperties;
-    const phone =
-        typeof query.phone === 'string' && query.phone.trim().length > 10
-            ? query.phone.trim()
-            : false;
+    const id =
+        typeof query.id === 'string' && query.id.trim().length === 20 ? query.id.trim() : false;
 
-    if (phone) {
-        // lookup the user
-        data.read('users', phone, (err, userData) => {
-            const user = { ...parseJSON(userData) };
-
-            if (err || !user) {
-                callback(404, { error: 'Requested user was not found!' });
+    if (id) {
+        // lookup the token
+        data.read('tokens', id, (err, tokenData) => {
+            if (err || !tokenData) {
+                callback(404, { error: 'Requested token was not found!' });
             } else {
-                delete user.password;
-                callback(200, user);
+                const token = { ...parseJSON(tokenData) };
+                callback(200, token);
             }
         });
     } else {
-        callback(404, { error: 'Requested user was not found!' });
+        callback(400, { error: 'You have a problem in your request!' });
     }
 };
 

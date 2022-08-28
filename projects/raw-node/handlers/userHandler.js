@@ -96,7 +96,7 @@ handler._user.get = (requestProperties, callback) => {
             }
         });
     } else {
-        callback(404, { error: 'Requested user was not found!' });
+        callback(400, { error: 'You have a problem in your request!' });
     }
 };
 
