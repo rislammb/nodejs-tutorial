@@ -185,27 +185,41 @@ handler._user.put = (requestProperties, callback) => {
 
 handler._user.delete = (requestProperties, callback) => {
     // check the phone number if valid
-    const { query } = requestProperties;
+    const { query, headers } = requestProperties;
     const phone =
         typeof query.phone === 'string' && query.phone.trim().length > 10
             ? query.phone.trim()
             : false;
 
     if (phone) {
-        // lookup the user
-        data.read('users', phone, (err, userData) => {
-            if (err || !userData) {
-                callback(404, { error: 'Request user was not found!' });
-            } else {
-                data.delete('users', phone, (err2) => {
-                    if (err2) {
-                        callback(500, { error: 'There was a problem in the server side!' });
-                    } else {
-                        callback(200, { message: 'User was deleted successfully!' });
-                    }
-                });
-            }
-        });
+        // verify token
+        const token = typeof headers.token === 'string' ? headers.token : false;
+        if (token) {
+            verify(token, phone, (res) => {
+                if (res) {
+                    // lookup the user
+                    data.read('users', phone, (err, userData) => {
+                        if (err || !userData) {
+                            callback(404, { error: 'Request user was not found!' });
+                        } else {
+                            data.delete('users', phone, (err2) => {
+                                if (err2) {
+                                    callback(500, {
+                                        error: 'There was a problem in the server side!',
+                                    });
+                                } else {
+                                    callback(200, { message: 'User was deleted successfully!' });
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    callback(403, { error: 'Authentication failed!' });
+                }
+            });
+        } else {
+            callback(403, { error: 'Authentication failed! Token not found.' });
+        }
     } else {
         callback(400, { error: 'There was a problem in your request!' });
     }
