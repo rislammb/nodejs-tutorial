@@ -15,14 +15,24 @@
 
 ### Endpoints/Route
 
+- POST /user [public]
+- GET /user?phone [private]
+- PUT /user [private]
+- DELETE /user?phone [private]
+
+- POST /token [public]
+- GET /token?id [public]
+- PUT /token [public]
+- DELETE /token?id [public]
+
 ## TODO
 
-- [ ] Authentication
-  - [ ] Registration
-  - [ ] Login
-  - [ ] Logout
-  - [ ] Edit
-  - [ ] Delete
+- [x] Authentication
+  - [x] Registration
+  - [x] Login
+  - [x] Logout
+  - [x] Edit
+  - [x] Delete
 - [ ] Links
   - [ ] Set maximum link limit
   - [ ] Set link with up/down status code
