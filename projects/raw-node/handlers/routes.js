@@ -9,11 +9,13 @@
 const { healthHandler } = require('./healthHandler');
 const { userHandler } = require('./userHandler');
 const { tokenHandler } = require('./tokenHandler');
+const { checkHandler } = require('./checkHandler');
 
 const routes = {
     health: healthHandler,
     user: userHandler,
     token: tokenHandler,
+    check: checkHandler,
 };
 
 // export module

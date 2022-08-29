@@ -10,7 +10,7 @@ const handler = {};
 
 // health route handler
 handler.notFoundHandler = (_requestProperties, callback) =>
-    callback(404, { message: 'Your request URl was not found!' });
+    callback(404, { message: 'Your request URL was not found!' });
 
 // export module
 module.exports = handler;

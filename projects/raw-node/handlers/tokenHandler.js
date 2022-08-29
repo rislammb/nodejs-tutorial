@@ -147,8 +147,8 @@ handler._token.delete = (requestProperties, callback) => {
 };
 
 handler._token.verify = (id, phone, callback) => {
-    data.read('tokens', id, (err1, tokenData) => {
-        if (err1 || !tokenData) {
+    data.read('tokens', id, (err, tokenData) => {
+        if (err || !tokenData) {
             callback(false);
         } else {
             const token = parseJSON(tokenData);
