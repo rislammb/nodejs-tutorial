@@ -89,30 +89,34 @@ handler._user.get = (requestProperties, callback) => {
     if (phone) {
         // verify token
         const token = typeof headers.token === 'string' ? headers.token : false;
-        verify(token, phone, (res) => {
-            if (res) {
-                // lookup the user
-                data.read('users', phone, (err, userData) => {
-                    if (err || !userData) {
-                        callback(404, { error: 'Requested user was not found!' });
-                    } else {
-                        const user = { ...parseJSON(userData) };
+        if (token) {
+            verify(token, phone, (res) => {
+                if (res) {
+                    // lookup the user
+                    data.read('users', phone, (err, userData) => {
+                        if (err || !userData) {
+                            callback(404, { error: 'Requested user was not found!' });
+                        } else {
+                            const user = { ...parseJSON(userData) };
 
-                        delete user.password;
-                        callback(200, user);
-                    }
-                });
-            } else {
-                callback(403, { error: 'Authentication failed!' });
-            }
-        });
+                            delete user.password;
+                            callback(200, user);
+                        }
+                    });
+                } else {
+                    callback(403, { error: 'Authentication failed!' });
+                }
+            });
+        } else {
+            callback(403, { error: 'Authentication failed! Token not found.' });
+        }
     } else {
         callback(400, { error: 'There was a problem in your request!' });
     }
 };
 
 handler._user.put = (requestProperties, callback) => {
-    const { body } = requestProperties;
+    const { body, headers } = requestProperties;
     const phone =
         typeof body.phone === 'string' && body.phone.trim().length > 10 ? body.phone.trim() : false;
 
@@ -130,33 +134,47 @@ handler._user.put = (requestProperties, callback) => {
             : false;
     if (phone) {
         if (fristName || lastName || password) {
-            // lookup the user
-            data.read('users', phone, (err, userData) => {
-                const user = { ...parseJSON(userData) };
+            // verify token
+            const token = typeof headers.token === 'string' ? headers.token : false;
+            if (token) {
+                verify(token, phone, (res) => {
+                    if (res) {
+                        // lookup the user
+                        data.read('users', phone, (err, userData) => {
+                            const user = { ...parseJSON(userData) };
 
-                if (err || !user) {
-                    callback(404, { error: 'Requested user was not found!' });
-                } else {
-                    if (fristName) {
-                        user.fristName = fristName;
-                    }
-                    if (lastName) {
-                        user.lastName = lastName;
-                    }
-                    if (password) {
-                        user.password = hash(password);
-                    }
+                            if (err || !user) {
+                                callback(404, { error: 'Requested user was not found!' });
+                            } else {
+                                if (fristName) {
+                                    user.fristName = fristName;
+                                }
+                                if (lastName) {
+                                    user.lastName = lastName;
+                                }
+                                if (password) {
+                                    user.password = hash(password);
+                                }
 
-                    // updated user store to database
-                    data.update('users', phone, user, (err2) => {
-                        if (err2) {
-                            callback(500, { error: 'There was a problem in the server side!' });
-                        } else {
-                            callback(201, { message: 'User updated successfully.' });
-                        }
-                    });
-                }
-            });
+                                // updated user store to database
+                                data.update('users', phone, user, (err2) => {
+                                    if (err2) {
+                                        callback(500, {
+                                            error: 'There was a problem in the server side!',
+                                        });
+                                    } else {
+                                        callback(201, { message: 'User updated successfully.' });
+                                    }
+                                });
+                            }
+                        });
+                    } else {
+                        callback(403, { error: 'Authentication failed!' });
+                    }
+                });
+            } else {
+                callback(403, { error: 'Authentication failed! Token not found.' });
+            }
         } else {
             callback(400, { error: 'You have a problem in your requset!' });
         }
