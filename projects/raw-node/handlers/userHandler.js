@@ -7,8 +7,11 @@
  */
 
 // dependendies
-const { hash, parseJSON } = require('../helpers/utilities');
 const data = require('../lib/data');
+const { hash, parseJSON } = require('../helpers/utilities');
+const {
+    _token: { verify },
+} = require('./tokenHandler');
 
 // module scaffolding
 const handler = {};
@@ -77,22 +80,30 @@ handler._user.post = (requestProperties, callback) => {
 
 handler._user.get = (requestProperties, callback) => {
     // check the phone number if valid
-    const { query } = requestProperties;
+    const { query, headers } = requestProperties;
     const phone =
         typeof query.phone === 'string' && query.phone.trim().length > 10
             ? query.phone.trim()
             : false;
 
     if (phone) {
-        // lookup the user
-        data.read('users', phone, (err, userData) => {
-            if (err || !userData) {
-                callback(404, { error: 'Requested user was not found!' });
-            } else {
-                const user = { ...parseJSON(userData) };
+        // verify token
+        const token = typeof headers.token === 'string' ? headers.token : false;
+        verify(token, phone, (res) => {
+            if (res) {
+                // lookup the user
+                data.read('users', phone, (err, userData) => {
+                    if (err || !userData) {
+                        callback(404, { error: 'Requested user was not found!' });
+                    } else {
+                        const user = { ...parseJSON(userData) };
 
-                delete user.password;
-                callback(200, user);
+                        delete user.password;
+                        callback(200, user);
+                    }
+                });
+            } else {
+                callback(403, { error: 'Authentication failed!' });
             }
         });
     } else {
