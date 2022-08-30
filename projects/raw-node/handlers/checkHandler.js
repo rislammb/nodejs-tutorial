@@ -31,8 +31,8 @@ handler.checkHandler = (requestProperties, callback) => {
 handler._check = {};
 
 handler._check.post = (requestProperties, callback) => {
-    // validate inputs
     const { body, headers } = requestProperties;
+    // validate inputs
     const protocol =
         typeof body.protocol === 'string' && ['http', 'https'].indexOf(body.protocol) > -1
             ? body.protocol
@@ -136,7 +136,37 @@ handler._check.post = (requestProperties, callback) => {
     }
 };
 
-handler._check.get = (requestProperties, callback) => {};
+handler._check.get = (requestProperties, callback) => {
+    const { query, headers } = requestProperties;
+    // validate check id
+    const id =
+        typeof query.id === 'string' && query.id.trim().length === 20 ? query.id.trim() : false;
+
+    if (id) {
+        const token = typeof headers.token === 'string' ? headers.token : false;
+        if (token) {
+            // lookup the check
+            data.read('checks', id, (err, checkData) => {
+                if (err || !checkData) {
+                    callback(404, { error: 'Requested check was not found!' });
+                } else {
+                    const check = parseJSON(checkData);
+                    verify(token, check.userPhone, (valid) => {
+                        if (valid) {
+                            callback(200, check);
+                        } else {
+                            callback(403, { error: 'Authentication failed!' });
+                        }
+                    });
+                }
+            });
+        } else {
+            callback(403, { error: 'Authentication failed! Token not found.' });
+        }
+    } else {
+        callback(400, { error: 'There was a problem in your request!' });
+    }
+};
 
 handler._check.put = (requestProperties, callback) => {};
 
