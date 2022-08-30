@@ -25,6 +25,11 @@
 - PUT /token [public]
 - DELETE /token?id [public]
 
+- POST /check [private]
+- GET /check?id [private]
+- PUT /check [private]
+- DELETE /check?id [private]
+
 ## TODO
 
 - [x] Authentication
@@ -34,9 +39,10 @@
   - [x] Edit
   - [x] Delete
 - [ ] Links
-  - [ ] Set maximum link limit
+  - [x] Add link for check
+  - [x] Set maximum link limit
   - [ ] Set link with up/down status code
-  - [ ] Edit/delete link
+  - [x] Edit/delete link
   - [ ] Check links periodically
   - [ ] Sent message to user about up/down
 
