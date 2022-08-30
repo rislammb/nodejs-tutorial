@@ -8,7 +8,7 @@
 
 // dependendies
 const data = require('../lib/data');
-const { hash, parseJSON, createRandomString } = require('../helpers/utilities');
+const { parseJSON, createRandomString } = require('../helpers/utilities');
 const {
     _token: { verify },
 } = require('./tokenHandler');
@@ -84,7 +84,7 @@ handler._check.post = (requestProperties, callback) => {
                                         const checkId = createRandomString(20);
                                         const checkObj = {
                                             id: checkId,
-                                            userPhone: phone,
+                                            phone,
                                             protocol,
                                             url,
                                             method,
@@ -151,7 +151,7 @@ handler._check.get = (requestProperties, callback) => {
                     callback(404, { error: 'Requested check was not found!' });
                 } else {
                     const check = parseJSON(checkData);
-                    verify(token, check.userPhone, (valid) => {
+                    verify(token, check.phone, (valid) => {
                         if (valid) {
                             callback(200, check);
                         } else {
@@ -206,7 +206,7 @@ handler._check.put = (requestProperties, callback) => {
                         callback(404, { error: 'Requested check was not found!' });
                     } else {
                         const check = parseJSON(checkData);
-                        verify(token, check.userPhone, (valid) => {
+                        verify(token, check.phone, (valid) => {
                             if (valid) {
                                 if (protocol) {
                                     check.protocol = protocol;
@@ -250,7 +250,83 @@ handler._check.put = (requestProperties, callback) => {
     }
 };
 
-handler._check.delete = (requestProperties, callback) => {};
+handler._check.delete = (requestProperties, callback) => {
+    const { query, headers } = requestProperties;
+    // validate check id
+    const id =
+        typeof query.id === 'string' && query.id.trim().length === 20 ? query.id.trim() : false;
+
+    if (id) {
+        const token = typeof headers.token === 'string' ? headers.token : false;
+        if (token) {
+            // lookup the check
+            data.read('checks', id, (err1, checkData) => {
+                if (err1 || !checkData) {
+                    callback(404, { error: 'Requested check was not found!' });
+                } else {
+                    const { phone } = parseJSON(checkData);
+                    verify(token, phone, (valid) => {
+                        if (valid) {
+                            // delete the check
+                            data.delete('checks', id, (err2) => {
+                                if (err2) {
+                                    callback(500, {
+                                        error: 'There was a problem in the server side!',
+                                    });
+                                } else {
+                                    // delete check id from user data
+                                    data.read('users', phone, (err3, userData) => {
+                                        if (err3 || !userData) {
+                                            callback(500, {
+                                                error: 'There was a problem in the server side!',
+                                            });
+                                        } else {
+                                            const user = parseJSON(userData);
+                                            const checks =
+                                                typeof user.checks === 'object' &&
+                                                user.checks instanceof Array
+                                                    ? user.checks
+                                                    : [];
+                                            const checkIndex = checks.indexOf(id);
+
+                                            if (checkIndex > -1) {
+                                                checks.splice(checkIndex, 1);
+                                                // update user with new checks data
+                                                user.checks = checks;
+                                                data.update('users', phone, user, (err4) => {
+                                                    if (err4) {
+                                                        callback(500, {
+                                                            error: 'There was a problem in the server side!',
+                                                        });
+                                                    } else {
+                                                        callback(200, {
+                                                            message:
+                                                                'Check was deleted successfully!',
+                                                        });
+                                                    }
+                                                });
+                                            } else {
+                                                callback(500, {
+                                                    error: 'Request check was not found in user data!',
+                                                });
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        } else {
+                            callback(403, { error: 'Authentication failed!' });
+                        }
+                    });
+                }
+            });
+        } else {
+            callback(403, { error: 'Authentication failed! Token not found.' });
+        }
+    } else {
+        callback(400, { error: 'There was a problem in your request!' });
+    }
+};
 
 // export module
 module.exports = handler;
