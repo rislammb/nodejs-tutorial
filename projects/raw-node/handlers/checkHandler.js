@@ -168,7 +168,87 @@ handler._check.get = (requestProperties, callback) => {
     }
 };
 
-handler._check.put = (requestProperties, callback) => {};
+handler._check.put = (requestProperties, callback) => {
+    const { body, headers } = requestProperties;
+    // validate inputs
+    const id = typeof body.id === 'string' && body.id.trim().length === 20 ? body.id.trim() : false;
+
+    const protocol =
+        typeof body.protocol === 'string' && ['http', 'https'].indexOf(body.protocol) > -1
+            ? body.protocol
+            : false;
+    const url =
+        typeof body.url === 'string' && body.url.trim().length > 0 ? body.url.trim() : false;
+    const method =
+        typeof body.method === 'string' &&
+        ['get', 'post', 'put', 'delete'].indexOf(body.method.toLowerCase()) > -1
+            ? body.method.toLowerCase()
+            : false;
+    const successCode =
+        typeof body.successCode === 'object' && body.successCode instanceof Array
+            ? body.successCode
+            : false;
+    const timeoutSeconds =
+        typeof body.timeoutSeconds === 'number' &&
+        body.timeoutSeconds % 1 === 0 &&
+        body.timeoutSeconds >= 1 &&
+        body.timeoutSeconds <= 5
+            ? body.timeoutSeconds
+            : false;
+
+    if (id) {
+        if (protocol || url || method || successCode || timeoutSeconds) {
+            const token = typeof headers.token === 'string' ? headers.token : false;
+            if (token) {
+                // lookup the check
+                data.read('checks', id, (err1, checkData) => {
+                    if (err1 || !checkData) {
+                        callback(404, { error: 'Requested check was not found!' });
+                    } else {
+                        const check = parseJSON(checkData);
+                        verify(token, check.userPhone, (valid) => {
+                            if (valid) {
+                                if (protocol) {
+                                    check.protocol = protocol;
+                                }
+                                if (url) {
+                                    check.url = url;
+                                }
+                                if (method) {
+                                    check.method = method;
+                                }
+                                if (successCode) {
+                                    check.successCode = successCode;
+                                }
+                                if (timeoutSeconds) {
+                                    check.timeoutSeconds = timeoutSeconds;
+                                }
+                                // update check with new data
+                                data.update('checks', id, check, (err2) => {
+                                    if (err2) {
+                                        callback(500, {
+                                            error: 'There was a problem in the server side!',
+                                        });
+                                    } else {
+                                        callback(201);
+                                    }
+                                });
+                            } else {
+                                callback(403, { error: 'Authentication failed!' });
+                            }
+                        });
+                    }
+                });
+            } else {
+                callback(403, { error: 'Authentication failed! Token not found.' });
+            }
+        } else {
+            callback(400, { error: 'You must provide at least one field to update!' });
+        }
+    } else {
+        callback(400, { error: 'There was a problem in your request!' });
+    }
+};
 
 handler._check.delete = (requestProperties, callback) => {};
 
