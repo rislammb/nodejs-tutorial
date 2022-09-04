@@ -13,8 +13,10 @@ environments.staging = {
     envName: 'staging',
     secretKey: 'uhhsdsdisiufhfyfh',
     maxChecks: 5,
-    twilio: {
-        fromPhone: '12345',
+    twilioEnv: {
+        fromPhone: '+',
+        accountSid: '',
+        authToken: '',
     },
 };
 
@@ -23,8 +25,10 @@ environments.production = {
     envName: 'production',
     secretKey: 'iuhswyewdhdhcsbfhf',
     maxChecks: 5,
-    twilio: {
-        fromPhone: '12345',
+    twilioEnv: {
+        fromPhone: '+',
+        accountSid: '',
+        authToken: '',
     },
 };
 
