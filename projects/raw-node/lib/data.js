@@ -86,5 +86,20 @@ lib.delete = (dir, file, callback) => {
     });
 };
 
+// read all file from given directory
+lib.readAll = (dir, callback) => {
+    fs.readdir(`${lib.baseDir + dir}`, 'utf8', (err, fileNames) => {
+        if (err || !fileNames) {
+            callback('Error reading directory!');
+        } else {
+            const trimmedFileNames = [];
+            fileNames.forEach((fileName) => {
+                trimmedFileNames.push(fileName.replace('.json', ''));
+            });
+            callback(false, trimmedFileNames);
+        }
+    });
+};
+
 // module exports
 module.exports = lib;

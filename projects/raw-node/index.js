@@ -7,18 +7,18 @@
 
 // dpendencies
 const server = require('./lib/server');
-const workers = require('./lib/workers');
+const worker = require('./lib/worker');
 
 // app object - module scaffolding
 const app = {};
 
-// create server and start workers
+// create server and start worker
 app.init = () => {
     // start the server
     server.init();
 
-    // start the workers
-    workers.init();
+    // start the worker
+    worker.init();
 };
 
 // invoke init function

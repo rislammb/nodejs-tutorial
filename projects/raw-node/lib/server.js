@@ -19,7 +19,7 @@ server.config = {
 
 // create server
 server.init = () => {
-    const port = process.env.port && server.config.port;
+    const port = process.env.port ?? server.config.port;
 
     const createdServer = http.createServer(handleReqRes);
     createdServer.listen(port, () => console.log(`Server listening on port ${port}`));
